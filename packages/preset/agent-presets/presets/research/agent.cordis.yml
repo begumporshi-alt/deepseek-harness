@@ -1,0 +1,117 @@
+# The `research` agent preset: a read-first analysis agent, mounted once per
+# process.
+#
+# This file is an AGENT-PLANE composition, like `standard`: the roster mounts
+# it once under a standing scope; every session naming it joins by scope
+# parentage. The host composition keeps what a preset must not own — the
+# registries, sandbox and approval stack, persistence, and the model route.
+#
+# The preset differs from `standard` in two ways. Its tool surface is reading
+# and search only: no shell, no file mutation tools, no workflows or goals, so
+# a session composed from it cannot change the workspace. And its delegation
+# roster is TYPED — two named tools (`researcher`, `reviewer`) whose children
+# carry fixed personas and allow-listed tools, so the parent names the work
+# instead of re-specifying the role on every delegation.
+
+# ── identity ────────────────────────────────────────────────────────────────
+
+# The preset's own persona, shadowing the deployment default for this agent.
+# `{{model}}` and `{{cwd}}` resolve from the agent's own route and workspace.
+- id: persona
+  name: '@deepseek-ai/dsh-persona'
+  config:
+    suffix: Your working directory is {{cwd}}.
+    prefix: >-
+      You are a research agent powered by the {{model}} model.
+
+- id: agent-instructions
+  name: '@deepseek-ai/dsh-agent-instructions'
+  config:
+    maxBytes: 65536
+
+# ── reading and search ──────────────────────────────────────────────────────
+
+# All three register into the host `tools` registry and provide nothing, so
+# they need no realm. `tool-fs` contributes `read` and `read_image` alongside
+# its mutation tools; this preset's own agents also see `write`/`edit` in the
+# catalog, but the typed children below never do — their allow-lists keep only
+# the reading tools.
+- id: tool-fs
+  name: '@deepseek-ai/dsh-tool-fs'
+
+- id: tool-fs-search
+  name: '@deepseek-ai/dsh-tool-fs-search'
+  config:
+    sampleOverCapGlobResults: false
+
+- id: tool-web
+  name: '@deepseek-ai/dsh-tool-web'
+  config:
+    fetch: true
+    searchTimeoutMs: 60000
+
+# ── typed delegation roster ─────────────────────────────────────────────────
+
+# The `subagents` registry and its spawn backend live in the HOST composition;
+# this preset contributes the delegation TOOLS. Unlike `standard`'s generic
+# `subagent` tool, each row here fixes the child's role in configuration — a
+# persona the child carries from its first turn and a tool allow-list it can
+# never widen — so the parent delegates by naming the tool and stating the
+# task. Children join this preset's composition and stay read-only by
+# construction: the allow-lists keep only reading and search tools.
+- id: delegation
+  name: cordis:group
+  group: true
+  config:
+    - id: tool-subagent-control
+      name: '@deepseek-ai/dsh-tool-subagent-control'
+
+    - id: tool-subagent-list-agents
+      name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'
+
+    - id: tool-subagent-researcher
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: researcher
+        backgroundMode: continuable
+        persona: |
+          You are a read-only research subagent. Map the codebase or topic you are given: structure, key modules, data flow, and where each fact lives (file paths and line references). Read and search only — never edit, write, or execute project code. Report findings as compact prose with references a teammate can jump to; state uncertainty explicitly rather than guessing.
+        toolFilter:
+          allow: [read, read_image, grep, glob, web_search, web_fetch]
+
+    - id: tool-subagent-reviewer
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: reviewer
+        backgroundMode: continuable
+        persona: |
+          You are a review subagent. Critique the change, plan, or claim you are given: correctness, edge cases, security, performance, and adherence to the surrounding code's conventions. Read and search only — never edit, write, or execute project code. Rank findings by severity, cite the exact file and line for each, and say what a fix would change; do not restate what you were given.
+        toolFilter:
+          allow: [read, read_image, grep, glob]
+
+# ── compaction ──────────────────────────────────────────────────────────────
+
+# `compaction-basic` reads `toolResultPrune` through `ctx.get`, so the pruner
+# must share this realm rather than sit outside it. Research sessions run
+# long, so the preset keeps the same compaction shape as `standard`.
+- id: compaction
+  name: cordis:group
+  group: true
+  isolate:
+    compaction: true
+    toolResultPruner: true
+  config:
+    - id: compaction-basic
+      name: '@deepseek-ai/dsh-compaction-basic'
+
+    - id: command-compact
+      name: '@deepseek-ai/dsh-command-compact'
+
+    - id: tool-result-pruner
+      name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+      config:
+        thresholdChars: 8192
+        headChars: 4096
+        tailChars: 1024
