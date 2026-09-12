@@ -292,6 +292,25 @@ export interface Config {
 
 Source: [`packages/attachment/attachment-local/src/index.ts:61`](../packages/attachment/attachment-local/src/index.ts)
 
+<a id="deepseek-aidsh-automation"></a>
+
+## `@deepseek-ai/dsh-automation`
+
+Requires: `agents` · `agentDefaultModel` · `sessions` · `sessionPersistence`
+
+```ts config-catalog
+/** Runtime configuration. Invalid values fail service load. */
+export interface Config {
+  /**
+   * Absolute path of the durable store file. Defaults to
+   * `<dsh home>/automations/automations.json`.
+   */
+  storePath?: string
+}
+```
+
+Source: [`packages/automation/automation/src/index.ts:62`](../packages/automation/automation/src/index.ts)
+
 <a id="deepseek-aidsh-bash-local"></a>
 
 ## `@deepseek-ai/dsh-bash-local`
@@ -1577,6 +1596,56 @@ export interface ReconnectConfig {
 ```
 
 Source: [`packages/mcp/mcp-client/src/index.ts:98`](../packages/mcp/mcp-client/src/index.ts)
+
+<a id="deepseek-aidsh-mcp-server"></a>
+
+## `@deepseek-ai/dsh-mcp-server`
+
+Requires: `agents` · `sessions` · `tools`
+
+```ts config-catalog
+/** Plugin config: the exposed server identity and per-agent model selection. */
+export interface McpServerConfig {
+  /** Provider route for the serving agent. */
+  provider?: string
+  /** Model name for the serving agent. */
+  model?: string
+  /** Server name advertised at MCP initialize. */
+  serverName?: string
+  /** Server version advertised at MCP initialize. */
+  serverVersion?: string
+  /** Runtime-only transport override; production uses stdio. */
+  transport?: Transport
+}
+```
+
+Depends on: `Transport` (`@modelcontextprotocol/sdk/shared/transport.js`)
+
+Source: [`packages/mcp/mcp-server/src/index.ts:39`](../packages/mcp/mcp-server/src/index.ts)
+
+<a id="deepseek-aidsh-memory-local"></a>
+
+## `@deepseek-ai/dsh-memory-local`
+
+Requires: `memory`
+
+```ts config-catalog
+/** Provider configuration. Invalid values fail plugin load. */
+export interface Config {
+  /**
+   * Directory holding the memory store. Defaults to
+   * `<projectRoot>/.dsh/memory`, where the project root is the nearest
+   * ancestor of the working directory containing `.git`.
+   */
+  dir?: string
+  /** Maximum characters of content one entry may hold. Defaults to 4000. */
+  maxEntryChars?: number
+  /** Maximum number of entries `list` and `search` return. Defaults to 200. */
+  maxListEntries?: number
+}
+```
+
+Source: [`packages/memory/memory-local/src/index.ts:30`](../packages/memory/memory-local/src/index.ts)
 
 <a id="deepseek-aidsh-message-feedback"></a>
 
@@ -2871,6 +2940,22 @@ export interface Config {
 
 Source: [`packages/lsp/tool-lsp/src/index.ts:57`](../packages/lsp/tool-lsp/src/index.ts)
 
+<a id="deepseek-aidsh-tool-memory"></a>
+
+## `@deepseek-ai/dsh-tool-memory`
+
+Requires: `tools` · `memory`
+
+```ts config-catalog
+/** Consumer configuration. Invalid values fail plugin load. */
+export interface Config {
+  /** Maximum characters of entry content shown per index line. Defaults to 120. */
+  indexLineMaxChars?: number
+}
+```
+
+Source: [`packages/memory/tool-memory/src/index.ts:27`](../packages/memory/tool-memory/src/index.ts)
+
 <a id="deepseek-aidsh-tool-present"></a>
 
 ## `@deepseek-ai/dsh-tool-present`
@@ -3189,7 +3274,7 @@ export interface Config {
 export type ToolPresentationMode = 'native' | 'ptc' | 'both'
 ```
 
-Source: [`packages/core/tools/src/index.ts:647`](../packages/core/tools/src/index.ts)
+Source: [`packages/core/tools/src/index.ts:648`](../packages/core/tools/src/index.ts)
 
 <a id="deepseek-aidsh-typert-loader"></a>
 
@@ -3507,6 +3592,8 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-host-plugin-inventory` — requires `loader` ([`packages/host/plugin-inventory/src/index.ts`](../packages/host/plugin-inventory/src/index.ts))
 - `@deepseek-ai/dsh-llm` ([`packages/llm/llm/src/index.ts`](../packages/llm/llm/src/index.ts))
 - `@deepseek-ai/dsh-lsp` ([`packages/lsp/lsp/src/index.ts`](../packages/lsp/lsp/src/index.ts))
+- `@deepseek-ai/dsh-mcp-app` — requires `cmdlineArgs` ([`packages/bundle/mcp-app/src/index.ts`](../packages/bundle/mcp-app/src/index.ts))
+- `@deepseek-ai/dsh-memory` ([`packages/memory/memory/src/index.ts`](../packages/memory/memory/src/index.ts))
 - `@deepseek-ai/dsh-schedule` — requires `agents` · `sessions` · `tools` · `sessionPersistence` ([`packages/schedule/schedule/src/index.ts`](../packages/schedule/schedule/src/index.ts))
 - `@deepseek-ai/dsh-session` ([`packages/core/session/src/index.ts`](../packages/core/session/src/index.ts))
 - `@deepseek-ai/dsh-session-checkpoint-policy` — requires `llm` · `sessionPersistence` · `sessions` · `tools` ([`packages/session/session-checkpoint-policy/src/index.ts`](../packages/session/session-checkpoint-policy/src/index.ts))
@@ -3519,6 +3606,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-subprocess-local` ([`packages/subprocess/subprocess-local/src/index.ts`](../packages/subprocess/subprocess-local/src/index.ts))
 - `@deepseek-ai/dsh-terminal` ([`packages/terminal/terminal/src/index.ts`](../packages/terminal/terminal/src/index.ts))
 - `@deepseek-ai/dsh-tool-ask-user` — requires `tools` · `userQuestions` ([`packages/interaction/tool-ask-user/src/index.ts`](../packages/interaction/tool-ask-user/src/index.ts))
+- `@deepseek-ai/dsh-tool-automation` — requires `tools` · `automation` ([`packages/automation/tool-automation/src/index.ts`](../packages/automation/tool-automation/src/index.ts))
 - `@deepseek-ai/dsh-tool-call-timeout-policy` — requires `tools` ([`packages/guard/timeout-policy/src/index.ts`](../packages/guard/timeout-policy/src/index.ts))
 - `@deepseek-ai/dsh-tool-cordis` — requires `tools` · `systemPrompt` · `dynamicCordisRunner` · `cordisInspect` ([`packages/extensions/tool-cordis/src/index.ts`](../packages/extensions/tool-cordis/src/index.ts))
 - `@deepseek-ai/dsh-tool-subagent-control` — requires `tools` · `subagents` ([`packages/subagent/tool-subagent-control/src/index.ts`](../packages/subagent/tool-subagent-control/src/index.ts))

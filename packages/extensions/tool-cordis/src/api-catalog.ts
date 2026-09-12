@@ -594,6 +594,32 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'automation',
+    summary: 'The automation runtime: a durable record set, a single-flight due driver over segmented timers, and the public create/list/delete surface.',
+    description: 'The automation runtime: a durable record set, a single-flight due driver over segmented timers, and the public create/list/delete surface. Every mutation persists the complete state before the next due instant is armed.',
+    methods: [
+      {
+        signature: 'async create(input: AutomationCreateInput): Promise<AutomationRecord>',
+        description: 'Create one automation.',
+        parameters: [{ name: 'input', description: 'validated creation input; a `resume-session` action must name a persisted Session.' }],
+        returns: 'the stored record.',
+        throws: ['{@link AutomationInputError} for invalid input.'],
+      },
+      {
+        signature: 'async list(): Promise<readonly AutomationRecord[]>',
+        description: 'List every stored record.',
+        parameters: [],
+        returns: 'the records in creation order.',
+      },
+      {
+        signature: 'async delete(id: AutomationId): Promise<boolean>',
+        description: 'Delete one stored record.',
+        parameters: [{ name: 'id', description: 'the automation to remove.' }],
+        returns: 'whether a record was removed; `false` for an unknown id.',
+      },
+    ],
+  },
+  {
     key: 'clientModules',
     summary: 'The web plugin table service: incremental `dsh.client` scan + wire composition + bundle route + index injection rows.',
     description: 'The web plugin table service: incremental `dsh.client` scan + wire composition + bundle route + index injection rows. Construction runs the activation scan synchronously — a malformed declaration or missing bundle among the already-loaded entries aggregates into one loud throw (FAILED fiber; the boot activation audit reports it).',
@@ -1313,6 +1339,43 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Select a provider by the file\'s extension and run one query. Selection is per-query and order-independent; no match throws `LspError` `LSP_UNAVAILABLE`.',
         parameters: [{ name: 'request', description: 'the normalized query.' }, { name: 'signal', description: 'optional cancellation forwarded to the selected provider.' }],
         returns: 'the normalized, closed-union result.',
+      },
+    ],
+  },
+  {
+    key: 'memory',
+    summary: 'The memory service.',
+    description: 'The memory service. Registered as `ctx.memory` (one instance per context). A provider registers under Memory.registerProvider; every read and write delegates to it. With no provider registered, every operation throws MemoryError `provider-missing` — misconfiguration never silently degrades to a no-op store.',
+    methods: [
+      {
+        signature: 'registerProvider(provider: MemoryProvider): () => void',
+        description: 'Register the memory provider. Throws MemoryError `duplicate-provider` when a provider is already registered. Returns a disposer; disposed with the calling fiber.',
+        parameters: [{ name: 'provider', description: 'The provider implementation to register.' }],
+        returns: 'the disposer that unregisters the provider.',
+      },
+      {
+        signature: 'record(input: MemoryRecordInput): Promise<MemoryEntry>',
+        description: 'Store one new memory entry.',
+        parameters: [{ name: 'input', description: 'The kind and content to store.' }],
+        returns: 'the stored entry with its provider-assigned identity.',
+      },
+      {
+        signature: 'list(): Promise<readonly MemoryEntry[]>',
+        description: 'Read every stored memory entry.',
+        parameters: [],
+        returns: 'all entries in provider-determined order.',
+      },
+      {
+        signature: 'search(query: string): Promise<readonly MemoryEntry[]>',
+        description: 'Read the stored entries matching a query.',
+        parameters: [{ name: 'query', description: 'Case-insensitive text matched against entry content.' }],
+        returns: 'the matching entries in provider-determined order.',
+      },
+      {
+        signature: 'forget(id: MemoryId): Promise<boolean>',
+        description: 'Delete one memory entry.',
+        parameters: [{ name: 'id', description: 'The entry to delete.' }],
+        returns: '`true` when the entry existed and was deleted, `false` when the id is unknown.',
       },
     ],
   },
@@ -3787,6 +3850,38 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type AuthorizationStatus = \'authorized\' | \'cancelled\';',
   },
   {
+    name: 'AutomationAction',
+    declaration: 'export type AutomationAction = {\n    readonly kind: \'new-session\';\n    readonly cwd: string;\n} | {\n    readonly kind: \'resume-session\';\n    readonly sessionId: string;\n};',
+  },
+  {
+    name: 'AutomationCreateInput',
+    declaration: 'export interface AutomationCreateInput {\n    readonly title: string;\n    readonly trigger: AutomationTriggerInput;\n    readonly action: AutomationAction;\n    readonly prompt: string;\n    readonly model?: AutomationModelSelection;\n}',
+  },
+  {
+    name: 'AutomationId',
+    declaration: 'export type AutomationId = Branded<\'AutomationId\'>;',
+  },
+  {
+    name: 'AutomationModelSelection',
+    declaration: 'export interface AutomationModelSelection {\n    readonly provider: string;\n    readonly model: string;\n    readonly maxTokens?: number;\n}',
+  },
+  {
+    name: 'AutomationRecord',
+    declaration: 'export interface AutomationRecord {\n    readonly id: AutomationId;\n    readonly title: string;\n    readonly createdAt: number;\n    readonly trigger: AutomationTrigger;\n    readonly action: AutomationAction;\n    readonly lastRun: AutomationRunSummary | null;\n    readonly prompt: string;\n    readonly model?: AutomationModelSelection;\n}',
+  },
+  {
+    name: 'AutomationRunSummary',
+    declaration: 'export interface AutomationRunSummary {\n    readonly startedAt: number;\n    readonly finishedAt: number;\n    readonly outcome: \'completed\' | \'error\';\n    readonly detail?: string;\n}',
+  },
+  {
+    name: 'AutomationTrigger',
+    declaration: 'export type AutomationTrigger = {\n    readonly kind: \'once\';\n    readonly at: number;\n} | {\n    readonly kind: \'every\';\n    readonly anchorAt: number;\n    readonly intervalSeconds: number;\n} | {\n    readonly kind: \'cron\';\n    readonly expression: string;\n    readonly timeZone?: string;\n};',
+  },
+  {
+    name: 'AutomationTriggerInput',
+    declaration: 'export type AutomationTriggerInput = {\n    readonly kind: \'once\';\n    readonly at: number;\n} | {\n    readonly kind: \'every\';\n    readonly intervalSeconds: number;\n} | {\n    readonly kind: \'cron\';\n    readonly expression: string;\n    readonly timeZone?: string;\n};',
+  },
+  {
     name: 'BackendRegistry',
     declaration: 'export class BackendRegistry {\n    register(name: string, backend: StorageBackend): () => void;\n    get(name: string): StorageBackend;\n    names(): string[];\n}',
   },
@@ -4609,6 +4704,26 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ManualCompactAgentContext',
     declaration: 'export interface ManualCompactAgentContext extends CompactionAgentContext {\n    runMaintenance<T>(task: (signal: AbortSignal) => Promise<T>): Promise<T>;\n}',
+  },
+  {
+    name: 'MemoryEntry',
+    declaration: 'export interface MemoryEntry {\n    readonly id: MemoryId;\n    readonly kind: MemoryKind;\n    readonly content: string;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n}',
+  },
+  {
+    name: 'MemoryId',
+    declaration: 'export type MemoryId = Branded<\'MemoryId\'>;',
+  },
+  {
+    name: 'MemoryKind',
+    declaration: 'export type MemoryKind = \'user\' | \'feedback\' | \'project\' | \'reference\';',
+  },
+  {
+    name: 'MemoryProvider',
+    declaration: 'export interface MemoryProvider {\n    readonly id: string;\n    record(input: MemoryRecordInput): Promise<MemoryEntry>;\n    list(): Promise<readonly MemoryEntry[]>;\n    search(query: string): Promise<readonly MemoryEntry[]>;\n    forget(id: MemoryId): Promise<boolean>;\n}',
+  },
+  {
+    name: 'MemoryRecordInput',
+    declaration: 'export interface MemoryRecordInput {\n    readonly kind: MemoryKind;\n    readonly content: string;\n}',
   },
   {
     name: 'Message',

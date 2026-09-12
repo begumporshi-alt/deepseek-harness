@@ -15,7 +15,9 @@ This table connects model-visible tool names to the plugin package and service s
 
 | Tool package | Model-visible names | Requires | Writes / affects | Shipped aliases | Deployment note |
 | --- | --- | --- | --- | --- | --- |
+| `@deepseek-ai/dsh-tool-memory` | `memory_forget`, `memory_list`, `memory_save`, `memory_search` | `ctx.tools`, `ctx.memory` | `memory entry files under the configured store directory`, `tool/call`, `tool/result`, `user/message memory-index section` | - | memory_save/search/list/forget operate on the ctx.memory provider; a missing provider degrades the index section while tools return provider_unavailable. |
 | `@deepseek-ai/dsh-tool-ask-user` | `ask_user_question` | `ctx.tools`, `ctx.userQuestions` | `tool/call`, `tool/result after a UI/provider answers the question` | - | ask_user_question pauses the tool call until the active UI provider returns a human answer. |
+| `@deepseek-ai/dsh-tool-automation` | `automation_create`, `automation_delete`, `automation_list` | `ctx.tools`, `ctx.automation` | `tool/call`, `tool/result`, `user/message automation provenance in the target session at run time` | - | automation_create/list/delete manage the durable schedules on ctx.automation; every due run appends one automation-provenance user message to its target session. |
 | `@deepseek-ai/dsh-tools` | `run_code` | `ctx.tools`, `ctx.codeRuntime (execution time)`, `ctx.systemPrompt` | `tool/call`, `one tool/ptc-dispatch-start + tool/ptc-dispatch pair per bridged sub-call`, `tool/result` | - | Owned by the tool registry as a reserved transport outside filterable capability layers under `mode: ptc` / `mode: both` (see the PTC mode Agent Note). Under `ptc` it is the registry's only wire contribution; the other visible capabilities are declared in a generated SDK section in the loaded runtime's language, and a program calls them through bindings scheduled under the native concurrency contract (submission-ordered starts and policy; concurrency-safe bodies overlap up to `maxParallelSubCalls`) that re-enter the complete guarded tool pipeline and link each nested execution to this outer result. |
 | `@deepseek-ai/dsh-plan-mode` | `exit_plan_mode` | `ctx.tools`, `ctx.systemPrompt`, `ctx.userQuestions (execution time, opportunistic)` | `tool/call`, `plan/mode inactive on an approved review`, `tool/result` | - | exit_plan_mode stays in the model-facing schema while planning is inactive so transitions add no tool-catalog churn on top of the plan-policy change. Its execute path rejects calls outside plan mode; in plan mode it presents the plan over the user-questions seam (approve / keep planning with feedback), and approval logs plan mode inactive at the step boundary. |
 | `@deepseek-ai/dsh-tool-bash` | `bash` | `ctx.tools`, `ctx.shell`, `ctx.systemPrompt`, `ctx.shellEnv`, `ctx.jobs at call time for run_in_background` | `tool/call`, `tool/result` | - | The bash tool is the model-facing consumer of the bash executor seam. A `run_in_background` run registers with the generic `ctx.jobs` runtime and is collected/stopped through the `job_*` tools from `@deepseek-ai/dsh-tool-jobs`; the `enableRunInBackground` config (default true) removes the parameter entirely when disabled. |
@@ -41,6 +43,99 @@ This table connects model-visible tool names to the plugin package and service s
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`, `owning Agent session` | `tool/call`, `todo/write`, `tool/result` | - | todo_write is session-owned state; UIs render the latest todo/write event as a checklist. `allowParallelInProgress` is required with no default, so the catalog states its choice: `true`, whose description invites several `in_progress` items. A deployment choosing `false` receives the same tool with a description asking for exactly one active task. |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`, `ctx.workflowEngine`, `ctx.systemPrompt`, `a calling Agent (exec.agent parents the script children)` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`, `web_search` | `ctx.tools`, `ctx.web`, `ctx.systemPrompt` | `tool/call`, `tool/result` | - | web_search and web_fetch keep provider selection behind ctx.web so model-visible schemas stay stable across backend swaps. |
+
+<a id="deepseek-aidsh-tool-memory"></a>
+
+## `@deepseek-ai/dsh-tool-memory`
+
+### `memory_forget`
+
+Delete one remembered fact by its id.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "The id of the entry to delete, as returned by memory_save, memory_search, or memory_list."
+    }
+  },
+  "required": [
+    "id"
+  ]
+}
+```
+
+Source: [`packages/memory/tool-memory/src/index.ts`](../packages/memory/tool-memory/src/index.ts)
+
+### `memory_list`
+
+List remembered facts for this project, newest first.
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+Source: [`packages/memory/tool-memory/src/index.ts`](../packages/memory/tool-memory/src/index.ts)
+
+### `memory_save`
+
+Record one durable fact for future sessions. Use it for stable user preferences, feedback, project constraints, or reference pointers — not for session working state.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "description": "What kind of knowledge this is: `user` (who the user is), `feedback` (corrections and confirmed approaches), `project` (goals, constraints, decisions), or `reference` (pointers to external resources).",
+      "enum": [
+        "user",
+        "feedback",
+        "project",
+        "reference"
+      ]
+    },
+    "content": {
+      "type": "string",
+      "description": "The fact to remember, as self-contained prose a later session can use without this conversation."
+    }
+  },
+  "required": [
+    "kind",
+    "content"
+  ]
+}
+```
+
+Source: [`packages/memory/tool-memory/src/index.ts`](../packages/memory/tool-memory/src/index.ts)
+
+### `memory_search`
+
+Search remembered facts by case-insensitive substring match against entry content.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Case-insensitive text to match against entry content."
+    }
+  },
+  "required": [
+    "query"
+  ]
+}
+```
+
+Source: [`packages/memory/tool-memory/src/index.ts`](../packages/memory/tool-memory/src/index.ts)
+
+memory_save/search/list/forget operate on the ctx.memory provider; a missing provider degrades the index section while tools return provider_unavailable.
 
 <a id="deepseek-aidsh-tool-ask-user"></a>
 
@@ -115,6 +210,96 @@ Ask the user a concise question when you need confirmation, a choice, or missing
 Source: [`packages/interaction/tool-ask-user/src/index.ts`](../packages/interaction/tool-ask-user/src/index.ts)
 
 ask_user_question pauses the tool call until the active UI provider returns a human answer.
+
+<a id="deepseek-aidsh-tool-automation"></a>
+
+## `@deepseek-ai/dsh-tool-automation`
+
+### `automation_create`
+
+Schedule one durable automation that runs a prompt on a timer, in a fresh session or by resuming an existing one. Use it for recurring work (daily reports, weekly reviews) or one future task; the schedule survives restarts. Exactly one trigger is required: `at`, `every_seconds`, or `cron` (with optional `time_zone`).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Short diagnostic label for the schedule."
+    },
+    "prompt": {
+      "type": "string",
+      "description": "The prompt submitted on every run, as self-contained prose a fresh session can act on."
+    },
+    "at": {
+      "type": "string",
+      "description": "One-shot ISO 8601 instant in the future, e.g. \"2026-09-13T09:00:00+08:00\"."
+    },
+    "every_seconds": {
+      "type": "number",
+      "description": "Fixed-rate interval in whole seconds, at least 300."
+    },
+    "cron": {
+      "type": "string",
+      "description": "Cron expression such as \"30 9 * * mon-fri\" (optionally 6 fields with seconds)."
+    },
+    "time_zone": {
+      "type": "string",
+      "description": "Optional IANA time zone for the cron expression, e.g. \"Asia/Shanghai\"."
+    },
+    "cwd": {
+      "type": "string",
+      "description": "Absolute directory for a fresh session each run. Omit to use the current working directory."
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Existing session id to resume and prompt on every run. Takes precedence over cwd."
+    }
+  },
+  "required": [
+    "title",
+    "prompt"
+  ]
+}
+```
+
+Source: [`packages/automation/tool-automation/src/index.ts`](../packages/automation/tool-automation/src/index.ts)
+
+### `automation_delete`
+
+Delete one automation by its id, as returned by automation_create or automation_list.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "The id of the automation to remove."
+    }
+  },
+  "required": [
+    "id"
+  ]
+}
+```
+
+Source: [`packages/automation/tool-automation/src/index.ts`](../packages/automation/tool-automation/src/index.ts)
+
+### `automation_list`
+
+List every stored automation with its trigger, target, next due time, and latest run outcome.
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+Source: [`packages/automation/tool-automation/src/index.ts`](../packages/automation/tool-automation/src/index.ts)
+
+automation_create/list/delete manage the durable schedules on ctx.automation; every due run appends one automation-provenance user message to its target session.
 
 <a id="deepseek-aidsh-tools"></a>
 

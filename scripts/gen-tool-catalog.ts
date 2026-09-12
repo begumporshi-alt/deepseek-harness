@@ -28,6 +28,9 @@ import LocalFileSystem from '@deepseek-ai/dsh-fs-local'
 import { AttachmentStore } from '@deepseek-ai/dsh-attachment'
 import type { ImageAttachmentLimits, ImageAttachmentRef, SaveImageAttachment, StoredImageAttachment } from '@deepseek-ai/dsh-attachment'
 import UserQuestionService from '@deepseek-ai/dsh-user-questions'
+import Memory from '@deepseek-ai/dsh-memory'
+import * as MemoryLocal from '@deepseek-ai/dsh-memory-local'
+import * as ToolMemory from '@deepseek-ai/dsh-tool-memory'
 import PlanModeController from '@deepseek-ai/dsh-plan-mode'
 import WebRuntime from '@deepseek-ai/dsh-web'
 import * as WebSearchExa from '@deepseek-ai/dsh-web-search-exa'
@@ -40,6 +43,7 @@ import SkillRegistry from '@deepseek-ai/dsh-skill'
 import * as SkillFileSystem from '@deepseek-ai/dsh-skill-filesystem'
 import LocalJobRegistry from '@deepseek-ai/dsh-jobs-local'
 import * as ToolAskUser from '@deepseek-ai/dsh-tool-ask-user'
+import * as ToolAutomation from '@deepseek-ai/dsh-tool-automation'
 import * as ToolBash from '@deepseek-ai/dsh-tool-bash'
 import * as ToolPwsh from '@deepseek-ai/dsh-tool-pwsh'
 import * as ToolBashPersistent from '@deepseek-ai/dsh-tool-bash-persistent'
@@ -189,6 +193,20 @@ export interface ToolPackage {
  */
 const TOOL_PACKAGES: ToolPackage[] = [
   {
+    pkg: '@deepseek-ai/dsh-tool-memory',
+    dir: 'tool-memory',
+    source: 'packages/memory/tool-memory/src/index.ts',
+    requires: ['ctx.tools', 'ctx.memory'],
+    writes: ['memory entry files under the configured store directory', 'tool/call', 'tool/result', 'user/message memory-index section'],
+    async mount(ctx) {
+      await ctx.plugin(Memory)
+      await ctx.plugin(MemoryLocal)
+      await ctx.plugin(ToolMemory)
+    },
+    note:
+      'memory_save/search/list/forget operate on the ctx.memory provider; a missing provider degrades the index section while tools return provider_unavailable.',
+  },
+  {
     pkg: '@deepseek-ai/dsh-tool-ask-user',
     dir: 'tool-ask-user',
     source: 'packages/interaction/tool-ask-user/src/index.ts',
@@ -200,6 +218,22 @@ const TOOL_PACKAGES: ToolPackage[] = [
     },
     note:
       'ask_user_question pauses the tool call until the active UI provider returns a human answer.',
+  },
+  {
+    pkg: '@deepseek-ai/dsh-tool-automation',
+    dir: 'tool-automation',
+    source: 'packages/automation/tool-automation/src/index.ts',
+    requires: ['ctx.tools', 'ctx.automation'],
+    writes: ['tool/call', 'tool/result', 'user/message automation provenance in the target session at run time'],
+    async mount(ctx) {
+      // The runtime needs the full loop stack, which the catalog never
+      // starts; an inert stub satisfies the consumer's registration-time
+      // inject because the schema harvest never executes a tool.
+      ctx.provide('automation', {} as import('@deepseek-ai/dsh-automation').AutomationRuntime)
+      await ctx.plugin(ToolAutomation)
+    },
+    note:
+      'automation_create/list/delete manage the durable schedules on ctx.automation; every due run appends one automation-provenance user message to its target session.',
   },
   {
     pkg: '@deepseek-ai/dsh-tools',

@@ -170,6 +170,30 @@ const homeAndGuide = pairedPages([
     section: { root: '集成', en: 'Integrations' },
     order: 1,
   },
+  {
+    source: 'docs/user/guide/mcp-overlays.md',
+    route: 'guide/mcp-overlays.md',
+    label: { root: '精选 MCP 工具服务器', en: 'Curated MCP tool servers' },
+    sidebar: { root: 'zh-guide', en: 'en-guide' },
+    section: { root: '集成', en: 'Integrations' },
+    order: 2,
+  },
+  {
+    source: 'docs/user/guide/memory.md',
+    route: 'guide/memory.md',
+    label: { root: '持久记忆', en: 'Persistent memory' },
+    sidebar: { root: 'zh-guide', en: 'en-guide' },
+    section: { root: '记忆', en: 'Memory' },
+    order: 1,
+  },
+  {
+    source: 'docs/user/guide/automations.md',
+    route: 'guide/automations.md',
+    label: { root: '跨会话自动化', en: 'Cross-session automations' },
+    sidebar: { root: 'zh-guide', en: 'en-guide' },
+    section: { root: '自动化', en: 'Automation' },
+    order: 3,
+  },
 ])
 
 const develop = pairedPages([
@@ -478,7 +502,7 @@ export interface DocsSection {
  */
 const sections: Record<DocsLocale, readonly DocsSection[]> = {
   root: [
-    { label: '入门' }, { label: 'SDK' }, { label: '自动化' }, { label: '集成' },
+    { label: '入门' }, { label: 'SDK' }, { label: '自动化' }, { label: '集成' }, { label: '记忆' },
     { label: '基础' }, { label: '框架能力' }, { label: '实战' }, { label: 'Cordis 框架教程' },
     { label: '概念' }, { label: '生成参考' }, { label: 'Cordis API' }, { label: '开发手册' },
     { label: '总览' },
@@ -490,7 +514,7 @@ const sections: Record<DocsLocale, readonly DocsSection[]> = {
     { label: '平台与接入', collapsed: true },
   ],
   en: [
-    { label: 'Guide' }, { label: 'SDK' }, { label: 'Automation' }, { label: 'Integrations' },
+    { label: 'Guide' }, { label: 'SDK' }, { label: 'Automation' }, { label: 'Integrations' }, { label: 'Memory' },
     { label: 'Basics' }, { label: 'Framework' }, { label: 'Practice' }, { label: 'Cordis framework tutorial' },
     { label: 'Concepts' }, { label: 'Generated reference' }, { label: 'Cordis Core API' }, { label: 'Cookbook' },
     { label: 'Overview' },

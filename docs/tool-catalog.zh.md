@@ -19,7 +19,9 @@
 
 | 工具包 | 模型可见名称 | 依赖 | 写入／影响 | 随产品发布的别名 | 部署说明 |
 | --- | --- | --- | --- | --- | --- |
+| `@deepseek-ai/dsh-tool-memory` | `memory_forget`、`memory_list`、`memory_save`、`memory_search` | `ctx.tools`、`ctx.memory` | `memory entry files under the configured store directory`、`tool/call`、`tool/result`、`user/message memory-index section` | - | memory_save/search/list/forget 通过 ctx.memory 提供方运作；缺少提供方时索引 section 会退化，工具会返回提供方不可用（provider_unavailable）。 |
 | `@deepseek-ai/dsh-tool-ask-user` | `ask_user_question` | `ctx.tools`、`ctx.userQuestions` | `tool/call`、`tool/result after a UI/provider answers the question` | - | ask_user_question 会暂停工具调用，直到当前 UI 提供方返回人类答案。 |
+| `@deepseek-ai/dsh-tool-automation` | `automation_create`、`automation_delete`、`automation_list` | `ctx.tools`、`ctx.automation` | `tool/call`、`tool/result`、`user/message automation provenance in the target session at run time` | - | automation_create/list/delete 管理 ctx.automation 上的持久调度；每次到期运行向其目标会话追加一条 automation 溯源的用户消息。 |
 | `@deepseek-ai/dsh-tools` | `run_code` | `ctx.tools`、`ctx.codeRuntime (execution time)`、`ctx.systemPrompt` | `tool/call`、`one tool/ptc-dispatch-start + tool/ptc-dispatch pair per bridged sub-call`、`tool/result` | - | 在 `mode: ptc`／`mode: both` 下，它由工具注册表所有，作为可过滤能力层之外的保留传输机制（参见 PTC mode Agent Note）。在 `ptc` 下，它是注册表对协议格式（wire format）的唯一贡献；其他可见能力在使用已加载运行时语言生成的 SDK 章节中声明。程序通过 binding 调用这些能力，调用按照原生并发约定调度：启动顺序和策略遵循提交顺序，并发安全的函数体最多重叠执行 `maxParallelSubCalls` 个。调用会重新进入完整且受守卫保护的工具流水线，并将每个嵌套执行关联到此外层结果。 |
 | `@deepseek-ai/dsh-plan-mode` | `exit_plan_mode` | `ctx.tools`、`ctx.systemPrompt`、`ctx.userQuestions (execution time, opportunistic)` | `tool/call`、`plan/mode inactive on an approved review`、`tool/result` | - | 规划未激活时，exit_plan_mode 仍保留在面向模型的 schema 中，这样状态转换不会在规划策略变更之外额外造成工具目录变动。其执行路径会拒绝规划模式之外的调用；在规划模式下，它通过用户交互 seam 提交计划（批准／根据反馈继续规划），批准后会在步骤边界记录规划模式已停用。 |
 | `@deepseek-ai/dsh-tool-bash` | `bash` | `ctx.tools`、`ctx.shell`、`ctx.systemPrompt`、`ctx.shellEnv`、`ctx.jobs at call time for run_in_background` | `tool/call`、`tool/result` | - | bash 工具是 bash 执行器 seam 面向模型的消费方。使用 `run_in_background` 的运行会注册到通用 `ctx.jobs` 运行时，并通过 `job_*` 工具（来自 `@deepseek-ai/dsh-tool-jobs`）收集／停止；禁用 `enableRunInBackground` 配置（默认为 true）后，该参数会被完全移除。 |
@@ -45,6 +47,99 @@
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`、`owning Agent session` | `tool/call`、`todo/write`、`tool/result` | - | todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为检查清单。`allowParallelInProgress` 是没有默认值的必填项，因此本目录明确选择 `true`，对应描述允许同时存在多个 `in_progress` 项。选择 `false` 的部署会获得同一工具，但描述会要求只能有 1 个活动任务。 |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`、`ctx.workflowEngine`、`ctx.systemPrompt`、`a calling Agent (exec.agent parents the script children)` | `tool/call`、`tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`、`web_search` | `ctx.tools`、`ctx.web`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | web_search 和 web_fetch 将提供方选择置于 ctx.web 之后，使模型可见 schema 在更换后端时保持稳定。 |
+
+<a id="deepseek-aidsh-tool-memory"></a>
+
+## `@deepseek-ai/dsh-tool-memory`
+
+### `memory_forget`
+
+按 id 删除一条已记住的事实。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "The id of the entry to delete, as returned by memory_save, memory_search, or memory_list."
+    }
+  },
+  "required": [
+    "id"
+  ]
+}
+```
+
+来源：[`packages/memory/tool-memory/src/index.ts`](../packages/memory/tool-memory/src/index.ts)
+
+### `memory_list`
+
+列出本项目已记住的事实，最新在前。
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+来源：[`packages/memory/tool-memory/src/index.ts`](../packages/memory/tool-memory/src/index.ts)
+
+### `memory_save`
+
+记录一条供未来会话使用的持久事实。用于稳定的用户偏好、反馈、项目约束或引用指针——不要用于会话工作状态。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "description": "What kind of knowledge this is: `user` (who the user is), `feedback` (corrections and confirmed approaches), `project` (goals, constraints, decisions), or `reference` (pointers to external resources).",
+      "enum": [
+        "user",
+        "feedback",
+        "project",
+        "reference"
+      ]
+    },
+    "content": {
+      "type": "string",
+      "description": "The fact to remember, as self-contained prose a later session can use without this conversation."
+    }
+  },
+  "required": [
+    "kind",
+    "content"
+  ]
+}
+```
+
+来源：[`packages/memory/tool-memory/src/index.ts`](../packages/memory/tool-memory/src/index.ts)
+
+### `memory_search`
+
+按大小写不敏感的子串匹配条目内容，搜索已记住的事实。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Case-insensitive text to match against entry content."
+    }
+  },
+  "required": [
+    "query"
+  ]
+}
+```
+
+来源：[`packages/memory/tool-memory/src/index.ts`](../packages/memory/tool-memory/src/index.ts)
+
+memory_save/search/list/forget 通过 ctx.memory 提供方运作；缺少提供方时索引 section 会退化，工具会返回提供方不可用（provider_unavailable）。
 
 <a id="deepseek-aidsh-tool-ask-user"></a>
 
@@ -119,6 +214,96 @@
 来源：[`packages/interaction/tool-ask-user/src/index.ts`](../packages/interaction/tool-ask-user/src/index.ts)
 
 ask_user_question 会暂停工具调用，直到当前 UI 提供方返回人类答案。
+
+<a id="deepseek-aidsh-tool-automation"></a>
+
+## `@deepseek-ai/dsh-tool-automation`
+
+### `automation_create`
+
+调度一个按定时器运行提示词的持久 automation——在全新会话中，或通过恢复既有会话。适用于周期性工作（每日报告、每周评审）或一次性未来任务；调度跨重启存活。必须且只能提供一个触发器：`at`、`every_seconds` 或 `cron`（可选 `time_zone`）。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Short diagnostic label for the schedule."
+    },
+    "prompt": {
+      "type": "string",
+      "description": "The prompt submitted on every run, as self-contained prose a fresh session can act on."
+    },
+    "at": {
+      "type": "string",
+      "description": "One-shot ISO 8601 instant in the future, e.g. \"2026-09-13T09:00:00+08:00\"."
+    },
+    "every_seconds": {
+      "type": "number",
+      "description": "Fixed-rate interval in whole seconds, at least 300."
+    },
+    "cron": {
+      "type": "string",
+      "description": "Cron expression such as \"30 9 * * mon-fri\" (optionally 6 fields with seconds)."
+    },
+    "time_zone": {
+      "type": "string",
+      "description": "Optional IANA time zone for the cron expression, e.g. \"Asia/Shanghai\"."
+    },
+    "cwd": {
+      "type": "string",
+      "description": "Absolute directory for a fresh session each run. Omit to use the current working directory."
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Existing session id to resume and prompt on every run. Takes precedence over cwd."
+    }
+  },
+  "required": [
+    "title",
+    "prompt"
+  ]
+}
+```
+
+来源：[`packages/automation/tool-automation/src/index.ts`](../packages/automation/tool-automation/src/index.ts)
+
+### `automation_delete`
+
+按 id 删除一个 automation，id 来自 automation_create 或 automation_list 的返回。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "The id of the automation to remove."
+    }
+  },
+  "required": [
+    "id"
+  ]
+}
+```
+
+来源：[`packages/automation/tool-automation/src/index.ts`](../packages/automation/tool-automation/src/index.ts)
+
+### `automation_list`
+
+列出每个已存储的 automation 及其触发器、目标、下个到期时间与最近运行结果。
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+来源：[`packages/automation/tool-automation/src/index.ts`](../packages/automation/tool-automation/src/index.ts)
+
+automation_create/list/delete manage the durable schedules on ctx.automation; every due run appends one automation-provenance user message to its target session.
 
 <a id="deepseek-aidsh-tools"></a>
 

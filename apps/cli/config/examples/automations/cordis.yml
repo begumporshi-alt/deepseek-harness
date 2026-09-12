@@ -1,0 +1,8 @@
+# Opt-in automations patch: the durable scheduling service and the
+# model-facing tools load together or not at all.
+- insert:
+    - id: automation
+      name: '@deepseek-ai/dsh-automation'
+
+    - id: tool-automation
+      name: '@deepseek-ai/dsh-tool-automation'

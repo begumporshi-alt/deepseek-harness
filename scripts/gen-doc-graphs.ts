@@ -63,6 +63,7 @@ type EventReceiverKind = 'context' | 'agent-dispatch' | 'events-service'
 const GROUP_ORDER = [
   'util',
   'attachment',
+  'automation',
   'llm',
   'core',
   'typert',
@@ -98,6 +99,23 @@ const GROUP_ORDER = [
 ]
 
 const SERVICE_ROLES: ServiceRole[] = [
+  {
+    key: 'automation',
+    pkg: 'automation',
+    title: 'Durable application-scoped scheduled Session runs',
+    mode: 'core',
+    consumers: ['tool-automation'],
+    note: 'The runtime owns the store, trigger math, and due dispatch; the consumer exposes automation management as tools and every due run lands in an ordinary root Session.',
+  },
+  {
+    key: 'memory',
+    pkg: 'memory',
+    title: 'Durable cross-session memory entries',
+    mode: 'seam',
+    implementations: ['memory-local'],
+    consumers: ['tool-memory'],
+    note: 'Entries live with the registered provider; the consumer renders saved and recalled entries as tool results and publishes the once-per-session index section.',
+  },
   {
     key: 'attachments',
     pkg: 'attachment',
