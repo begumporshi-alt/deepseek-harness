@@ -615,3 +615,29 @@ export function defineTool<const S extends ParameterSchemaSpec, const O extends 
   }
   return tool
 }
+
+/**
+ * Build one exact two-field error output schema while preserving its literal
+ * code. Tools return these values instead of throwing so the model can read
+ * the code and correct its input.
+ * @typeParam C - The literal error-code union member.
+ * @param code - The literal error code this schema pins.
+ * @returns the JSON-schema object for one `{ code, message }` error value.
+ */
+export function basicErrorSchema<const C extends string>(code: C): {
+  readonly type: 'object'
+  readonly additionalProperties: false
+  readonly properties: {
+    readonly code: { readonly type: 'string'; readonly required: true; readonly const: C }
+    readonly message: { readonly type: 'string'; readonly required: true }
+  }
+} {
+  return {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      code: { type: 'string', required: true, const: code },
+      message: { type: 'string', required: true },
+    },
+  }
+}

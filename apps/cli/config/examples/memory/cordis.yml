@@ -1,0 +1,11 @@
+# Opt-in persistent-memory patch: the memory service, the local filesystem
+# provider, and the model-facing tools load together or not at all.
+- insert:
+    - id: memory
+      name: '@deepseek-ai/dsh-memory'
+
+    - id: memory-local
+      name: '@deepseek-ai/dsh-memory-local'
+
+    - id: tool-memory
+      name: '@deepseek-ai/dsh-tool-memory'

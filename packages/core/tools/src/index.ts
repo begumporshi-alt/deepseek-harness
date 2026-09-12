@@ -56,6 +56,7 @@ const SDK_RENDERERS: Record<string, (schemas: ToolSdkSchema[]) => string> = {
 } satisfies Record<CodeSdkLanguage, (schemas: ToolSdkSchema[]) => string>
 
 export {
+  basicErrorSchema,
   defineTool,
   valueSchemaSpecToJsonSchema,
   parameterSchemaSpecToJsonSchema,

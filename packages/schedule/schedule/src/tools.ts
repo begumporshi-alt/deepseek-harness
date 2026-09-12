@@ -6,7 +6,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { ContentBlock } from '@deepseek-ai/dsh-llm'
-import { defineTool } from '@deepseek-ai/dsh-tools'
+import { basicErrorSchema, defineTool } from '@deepseek-ai/dsh-tools'
 import type { GenericCallView } from '@deepseek-ai/dsh-tools'
 import {
   allocateScheduleId,
@@ -73,18 +73,6 @@ const EVERY_VIEW_SCHEMA = {
 } as const
 
 const VIEW_SCHEMA = { oneOf: [AFTER_VIEW_SCHEMA, AT_VIEW_SCHEMA, EVERY_VIEW_SCHEMA] } as const
-
-/** Build one exact two-field error schema while preserving its literal code. */
-function basicErrorSchema<const C extends string>(code: C) {
-  return {
-    type: 'object',
-    additionalProperties: false,
-    properties: {
-      code: { type: 'string', required: true, const: code },
-      message: { type: 'string', required: true },
-    },
-  } as const
-}
 
 const BASIC_ERROR_SCHEMAS = [
   basicErrorSchema('invalid_prompt'),
