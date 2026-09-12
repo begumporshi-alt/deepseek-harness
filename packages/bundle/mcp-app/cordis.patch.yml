@@ -1,0 +1,21 @@
+# The automation-only MCP application over dsh-base. Stdout belongs to MCP.
+
+- id: system-prompt
+  config:
+    personaSuffix: Your working directory is {{cwd}}.
+    personaPrefix: >-
+      You are a coding agent powered by the {{model}} model.
+
+- id: session-title-llm
+  disabled: true
+
+- insert:
+    - id: mcp-app-startup
+      name: '@deepseek-ai/dsh-mcp-app'
+
+    - id: mcp-server
+      name: '@deepseek-ai/dsh-mcp-server'
+      inject: [mcpAppStartup]
+      config:
+        provider: deepseek-official
+        model: deepseek-v4-flash

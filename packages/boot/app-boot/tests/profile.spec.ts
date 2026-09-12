@@ -216,6 +216,10 @@ describe('loadProfile', () => {
       bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-acp-app'],
       patchReload: 'startup',
     })
+    expect(PROFILE_TEMPLATES.mcp).toEqual({
+      bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-mcp-app'],
+      patchReload: 'startup',
+    })
     expect(PROFILE_TEMPLATES.sdk).toEqual({
       bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-sdk-app'],
       patchReload: 'startup',

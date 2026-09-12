@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-12-mcp-server-bridge.md
+2026-09-12-mcp-server-bridge.md: 632b76f797f5163354a7ec538123a6ae48d7e53b
+2026-09-12-mcp-server-bridge.zh.md: de2dbc628b32d441bed0e9b32d2dc11f022d6690
