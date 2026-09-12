@@ -271,6 +271,32 @@ describe('loadProfile', () => {
     ])
   })
 
+  it('normalizes the retired web tuple to the BrowserSkill-carrying template', () => {
+    const anchor = stageInstallation({
+      '@deepseek-ai/dsh-base': { patch: '[]\n' },
+      '@deepseek-ai/dsh-web-app': { patch: '[]\n' },
+      '@wxg-prc-cpg/browser-skill-dsh-plugin': { patch: '[]\n' },
+      'custom-bundle': { patch: '[]\n' },
+    })
+    const home = tmp()
+    const stock = resolveProfileDir('web', home)
+    initProfile(stock, ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'])
+    loadProfile('t', 'web', anchor, home)
+    expect(readProfileManifest('t', stock).dsh?.profile).toEqual({
+      bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', '@wxg-prc-cpg/browser-skill-dsh-plugin'],
+      patchReload: 'live',
+    })
+
+    // A user-owned bundle list is never rewritten, even one layer short.
+    const customHome = tmp()
+    const custom = resolveProfileDir('web', customHome)
+    initProfile(custom, ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'custom-bundle'])
+    loadProfile('t', 'web', anchor, customHome)
+    expect(readProfileManifest('t', custom).dsh?.profile?.bundles).toEqual([
+      '@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'custom-bundle',
+    ])
+  })
+
   it('adds a shipped reload default only to an exact stock tuple and preserves explicit choices', () => {
     const anchor = stageInstallation({
       '@deepseek-ai/dsh-base': { patch: '[]\n' },

@@ -42,7 +42,7 @@ The tree composes over an empty root:
 - then the profile's `cordis.patch.yml`, then the home-level `$DSH_HOME/cordis.patch.yml`
 - then `--patch` overlays
 
-Bundles named in `dsh.profile.bundles` resolve from the dsh installation first (`@deepseek-ai/dsh-base`, `@deepseek-ai/dsh-web-app`, `@deepseek-ai/dsh-headless`, `@deepseek-ai/dsh-sdk-app`, `@deepseek-ai/dsh-sdk-minimal`, `@deepseek-ai/dsh-acp-app`, `@deepseek-ai/dsh-mcp-app`), then from the profile's own `node_modules`, where pnpm installs out-of-tree plugins.
+Bundles named in `dsh.profile.bundles` resolve from the dsh installation first (`@deepseek-ai/dsh-base`, `@deepseek-ai/dsh-web-app`, `@deepseek-ai/dsh-headless`, `@deepseek-ai/dsh-sdk-app`, `@deepseek-ai/dsh-sdk-minimal`, `@deepseek-ai/dsh-acp-app`, `@deepseek-ai/dsh-mcp-app`, `@wxg-prc-cpg/browser-skill-dsh-plugin`), then from the profile's own `node_modules`, where pnpm installs out-of-tree plugins. The `web` template composes the BrowserSkill bundle, so web sessions carry the `browser_*` tools; every call fails with setup guidance until the `bsk` CLI and its browser extension are installed (see the [BrowserSkill guide](../../docs/user/guide/browserskill.md)).
 
 Use `--dump-default-config` and `--dump-config` to inspect the composed tree without booting it.
 

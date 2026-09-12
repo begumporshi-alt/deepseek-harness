@@ -117,6 +117,7 @@
     "@deepseek-ai/dsh-web-frontend": "workspace:^",
     "@deepseek-ai/dsh-workspace": "workspace:^",
     "@deepseek-ai/schemastery": "workspace:^",
+    "@wxg-prc-cpg/browser-skill-dsh-plugin": "0.1.2",
     "commander": "^15.0.0",
     "open": "^11.0.0"
   },

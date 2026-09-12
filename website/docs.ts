@@ -194,6 +194,14 @@ const homeAndGuide = pairedPages([
     section: { root: '自动化', en: 'Automation' },
     order: 3,
   },
+  {
+    source: 'docs/user/guide/browserskill.md',
+    route: 'guide/browserskill.md',
+    label: { root: '浏览器自动化', en: 'Browser automation' },
+    sidebar: { root: 'zh-guide', en: 'en-guide' },
+    section: { root: '集成', en: 'Integrations' },
+    order: 3,
+  },
 ])
 
 const develop = pairedPages([
