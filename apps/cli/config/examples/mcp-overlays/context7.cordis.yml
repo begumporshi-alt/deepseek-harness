@@ -1,0 +1,9 @@
+# Opt-in reference for the Context7 hosted documentation MCP server. The remote
+# service must already be reachable; DSH connects but does not manage accounts.
+- insert:
+    - id: mcp-context7
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: context7
+        transport: streamable-http
+        url: https://mcp.context7.com/mcp

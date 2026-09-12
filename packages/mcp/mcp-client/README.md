@@ -146,6 +146,7 @@ Read these pages when the package-level contract is not enough. They move from t
 - [MCP client plugin Agent Note](../../../.agents/notes/implemented/feature/2026-07-07-mcp-client-plugin.md) — the naming invariants, discovery and execution design, alternatives, and consequences.
 - [Canonical tool output contract Agent Note](../../../.agents/notes/implemented/architecture/2026-07-20-canonical-tool-output-contract.md) — how MCP results map into the canonical tool-output contract.
 - [Third-party memory MCP guide](../../../docs/user/guide/mcp-memory.md) — three memory-server overlays using this package.
+- [Curated tool-server overlays guide](../../../docs/user/guide/mcp-overlays.md) — browser automation and documentation-lookup servers using this package.
 - [Generated configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-mcp-client) — every accepted config field and its source declaration.
 
 -----

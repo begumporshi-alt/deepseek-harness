@@ -146,6 +146,7 @@ kind: "package-reference"
 - [MCP 客户端插件 Agent Note](../../../.agents/notes/implemented/feature/2026-07-07-mcp-client-plugin.zh.md)——命名不变式、发现与执行设计、备选方案与后果。
 - [规范工具输出约定 Agent Note](../../../.agents/notes/implemented/architecture/2026-07-20-canonical-tool-output-contract.zh.md)——MCP 结果如何映射进规范工具输出约定。
 - [第三方记忆 MCP 指南](../../../docs/user/guide/mcp-memory.zh.md)——使用本包的三份记忆服务器 overlay。
+- [精选 MCP 工具服务器 overlay 指南](../../../docs/user/guide/mcp-overlays.zh.md)——通过本包接入的浏览器自动化与文档查询服务器。
 - [生成配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-mcp-client)——每个受支持配置字段及其源声明。
 
 -----
